@@ -15,3 +15,7 @@ Thumbs.db
 node_modules/
 dist/
 build/
+config.b64
+*.exe
+__pycache__/
+*.pyc
