@@ -1,5 +1,7 @@
 # MiniMax Monitor Tool
 
+![Preview](img.png)
+
 [English](#english) | [简体中文](#chinese)
 
 <a name="english"></a>
