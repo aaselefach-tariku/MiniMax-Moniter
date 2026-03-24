@@ -2,9 +2,10 @@ import sys
 import threading
 import time
 import os
+import datetime
 from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout, 
                              QLabel, QPushButton, QLineEdit, QComboBox, QFrame,
-                             QSystemTrayIcon, QMenu, QSizeGrip, QStackedWidget, QSlider)
+                             QSystemTrayIcon, QMenu, QSizeGrip, QStackedWidget, QSlider, QProgressBar)
 from PyQt6.QtCore import Qt, QPoint, QTimer, pyqtSignal, QObject, QThread, QRect, QPropertyAnimation, QEasingCurve
 from PyQt6.QtGui import QIcon, QAction
 
@@ -33,11 +34,15 @@ class MonitorWorker(QObject):
                 try:
                     success = self.monitor.update()
                     if success:
+                        remains = int(self.monitor.current_data.get("current_interval_usage_count", 0))
+                        total = int(self.monitor.current_data.get("current_interval_total_count", 0))
                         data = {
                             "usage": self.monitor.get_usage_str(),
                             "rpm": self.monitor.get_rpm(),
                             "interval": self.monitor.get_interval_str(),
-                            "model": self.monitor.model_name
+                            "model": self.monitor.model_name,
+                            "remains": remains,
+                            "total": total
                         }
                         self.data_updated.emit(data)
                     else:
@@ -147,9 +152,12 @@ class MiniMaxMonitor(QWidget):
         m_layout.setSpacing(0)
         self.usage_label = QLabel("0 / 0")
         self.usage_label.setStyleSheet("font-size: 22px; font-weight: bold; color: white;")
-        m_sep = QFrame()
-        m_sep.setFrameShape(QFrame.Shape.HLine)
-        m_sep.setStyleSheet(f"background-color: {ROSE_RED}; height: 1px; border: none; margin: 3px 0;")
+        
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setFixedHeight(2)
+        self.progress_bar.setTextVisible(False)
+        self.update_progress_style()
+        
         m_footer = QHBoxLayout()
         self.rpm_label = QLabel("RPM: 0")
         self.rpm_label.setStyleSheet("font-size: 10px; color: #DDD;")
@@ -159,7 +167,7 @@ class MiniMaxMonitor(QWidget):
         m_footer.addStretch()
         m_footer.addWidget(self.model_label)
         m_layout.addWidget(self.usage_label)
-        m_layout.addWidget(m_sep)
+        m_layout.addWidget(self.progress_bar)
         m_layout.addLayout(m_footer)
         
         self.config_view = QWidget()
@@ -200,17 +208,13 @@ class MiniMaxMonitor(QWidget):
         btn_save.setStyleSheet(f"background: {ROSE_RED}; color: white; border-radius: 4px; min-height: 24px; font-weight: bold;")
         btn_save.clicked.connect(self.save_config_action)
         
-        btn_back = QPushButton("Back")
-        btn_back.setStyleSheet("font-size: 9px; color: #AAA;")
-        btn_back.clicked.connect(self.toggle_config)
-        
         c_layout.addWidget(self.input_key)
         c_layout.addWidget(self.combo_model)
         c_layout.addLayout(mode_row)
         c_layout.addLayout(opacity_row)
         c_layout.addWidget(self.config_msg)
         c_layout.addWidget(btn_save)
-        c_layout.addWidget(btn_back)
+        c_layout.addStretch()
 
         self.view_stack.addWidget(self.monitor_view)
         self.view_stack.addWidget(self.config_view)
@@ -225,6 +229,25 @@ class MiniMaxMonitor(QWidget):
             self.shrink_window()
         else:
             self.setMinimumSize(150, 75)
+
+    def update_progress_style(self):
+        if self.display_mode == "Remains":
+            self.progress_bar.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
+        else:
+            self.progress_bar.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
+            
+        self.progress_bar.setStyleSheet(f"""
+            QProgressBar {{
+                background-color: #444;
+                border: none;
+                border-radius: 1px;
+                margin: 4px 0;
+            }}
+            QProgressBar::chunk {{
+                background-color: {ROSE_RED};
+                border-radius: 1px;
+            }}
+        """)
 
     def onOpacityChanged(self, value):
         self.bg_opacity = value
@@ -296,6 +319,7 @@ class MiniMaxMonitor(QWidget):
         self.api_key = key
         self.model_name = self.combo_model.currentText()
         self.display_mode = self.combo_mode.currentText()
+        self.update_progress_style()
         self.persist_current_geometry()
         self.model_label.setText(self.model_name)
         self.startWorker()
@@ -314,14 +338,15 @@ class MiniMaxMonitor(QWidget):
 
     def onTrayActivated(self, reason):
         try:
-            if int(reason) in [3, 2]:
+            r = int(reason)
+            if r in [3, 2]:
                 if self.isVisible():
                     self.hide()
                 else:
                     self.showNormal()
                     self.activateWindow()
                     self.raise_()
-        except:
+        except Exception:
             self.showNormal()
 
     def show_config_and_warn(self):
@@ -349,6 +374,16 @@ class MiniMaxMonitor(QWidget):
         self.interval_label.setText(data["interval"])
         self.interval_label.adjustSize()
         self.model_label.setText(data["model"])
+        
+        total = data.get("total", 0)
+        remains = data.get("remains", 0)
+        if total > 0:
+            if self.display_mode == "Used":
+                self.progress_bar.setRange(0, total)
+                self.progress_bar.setValue(total - remains)
+            else:
+                self.progress_bar.setRange(0, total)
+                self.progress_bar.setValue(remains)
 
     def handleError(self, msg):
         self.usage_label.setText("Error")
