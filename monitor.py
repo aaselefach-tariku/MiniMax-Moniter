@@ -4,16 +4,18 @@ import datetime
 from minimax_api import MiniMaxAPI, parse_model_data
 
 class UsageMonitor:
-    def __init__(self, api_key: str, model_name: str = "MiniMax-M*"):
+    def __init__(self, api_key: str, model_name: str = "MiniMax-M*", display_mode: str = "Used"):
         self.api = MiniMaxAPI(api_key)
         self.model_name = model_name
+        self.display_mode = display_mode
         self.history = collections.deque(maxlen=60) 
         self.current_data = None
         self.error_message = None
 
-    def update_params(self, api_key: str, model_name: str):
+    def update_params(self, api_key: str, model_name: str, display_mode: str = "Used"):
         self.api.api_key = api_key
         self.model_name = model_name
+        self.display_mode = display_mode
         # Keep history for continuity
 
     def update(self):
@@ -34,17 +36,12 @@ class UsageMonitor:
         self.current_data = model_data
         self.error_message = None
         
-        # Ensure it is an integer
         try:
+            # API returns REMAINS
             usage = int(model_data.get("current_interval_usage_count", 0))
             self.history.append((time.time(), usage))
-            
-            # Debug logging
-            with open("monitor_debug.log", "a") as f:
-                f.write(f"{datetime.datetime.now()}: usage={usage}, history_len={len(self.history)}\n")
-        except Exception as e:
-            with open("monitor_debug.log", "a") as f:
-                f.write(f"{datetime.datetime.now()}: Error parsing usage: {e}\n")
+        except Exception:
+            pass
             
         return True
 
@@ -59,7 +56,7 @@ class UsageMonitor:
         if time_diff < 1.0:
             return 0
             
-        # usage decreases as it represents remains
+        # usage decreases as it represents remains, so delta is absolute
         usage_diff = abs(end_usage - start_usage)
         rpm = (usage_diff / time_diff) * 60
         return int(round(rpm))
@@ -67,10 +64,15 @@ class UsageMonitor:
     def get_usage_str(self) -> str:
         if not self.current_data:
             return "N/A"
-        # The API's usage_count actually seems to represent REMAINS
-        remains = self.current_data.get("current_interval_usage_count", 0)
-        total = self.current_data.get("current_interval_total_count", 0)
-        return f"{remains} / {total}"
+        # API field is REMAINS
+        api_remains = int(self.current_data.get("current_interval_usage_count", 0))
+        total = int(self.current_data.get("current_interval_total_count", 0))
+        
+        if self.display_mode == "Remains":
+            return f"{api_remains} / {total}"
+        else: # "Used"
+            used = max(0, total - api_remains)
+            return f"{used} / {total}"
 
     def get_interval_str(self) -> str:
         if not self.current_data:

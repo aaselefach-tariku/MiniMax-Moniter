@@ -4,7 +4,7 @@ import json
 
 CONFIG_FILE = "config.b64"
 
-def save_config(api_key: str, opacity: int = 230, model: str = "MiniMax-M*", geometry: dict = None):
+def save_config(api_key: str, opacity: int = 230, model: str = "MiniMax-M*", geometry: dict = None, display_mode: str = "Used"):
     """
     Saves the config to a base64 encoded JSON file.
     """
@@ -12,7 +12,8 @@ def save_config(api_key: str, opacity: int = 230, model: str = "MiniMax-M*", geo
         "api_key": api_key,
         "opacity": opacity,
         "model": model,
-        "geometry": geometry
+        "geometry": geometry,
+        "display_mode": display_mode
     }
     encoded = base64.b64encode(json.dumps(data).encode('utf-8')).decode('utf-8')
     with open(CONFIG_FILE, "w", encoding='utf-8') as f:
@@ -22,7 +23,7 @@ def load_config() -> dict:
     """
     Loads the config from a base64 encoded JSON file.
     """
-    default = {"api_key": "", "opacity": 230, "model": "MiniMax-M*", "geometry": None}
+    default = {"api_key": "", "opacity": 230, "model": "MiniMax-M*", "geometry": None, "display_mode": "Used"}
     if not os.path.exists(CONFIG_FILE):
         return default
     try:
@@ -31,6 +32,7 @@ def load_config() -> dict:
             if not encoded:
                 return default
             data = json.loads(base64.b64decode(encoded).decode('utf-8'))
+            # Merge defaults for new keys
             return {**default, **data}
     except Exception:
         return default
