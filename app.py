@@ -110,7 +110,7 @@ def main(page: ft.Page):
             api_key_input,
             model_dropdown,
             ft.ElevatedButton("Save & Apply", on_click=save_config, bgcolor="cyan700", color="white"),
-            ft.TextButton("Back", on_click=toggle_config, font_size=12),
+            ft.TextButton(content=ft.Text("Back", size=12), on_click=toggle_config),
         ], spacing=10),
         padding=20,
         width=300,
